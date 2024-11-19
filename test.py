@@ -51,6 +51,7 @@ if __name__ == "__main__":
     # Training model parameters
     parser.add_argument("--dataset", type=str, default="cifar100")
     parser.add_argument("--model", type=str, default="resnet-s")
+    parser.add_argument("--model_file", type=str, default="", help="model file path to load directly")
     parser.add_argument("--cluster_assignment_file", type=str, default="")
     parser.add_argument("--epochs", type=int, default=7)
 
