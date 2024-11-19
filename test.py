@@ -72,11 +72,11 @@ if __name__ == "__main__":
     dataset, _, counts = get_dataset(args)
     
     # Get model and load weights
-    model = get_model_architecture(args.model, args.dataset_t)
+    model = get_model_architecture(args.model, args.dataset)
 
     save_path = ""
     if args.model_file == "":
-        save_path = get_model_save_path(args, " ".join(args.features_t))
+        save_path = get_model_save_path(args)
     else:
         save_path = args.model_file
 
