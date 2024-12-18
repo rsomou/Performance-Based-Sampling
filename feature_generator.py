@@ -6,7 +6,9 @@ from transformers import AutoProcessor, CLIPModel
 import csv
 from tqdm import tqdm
 import os
+import utils.adv_utils
 
+FEATURE_DIR = './features'
 def extract_clip_features(dataset, split, output_path, batch_size=32, num_workers=8):
 
     # Setup CLIP model and processor
@@ -39,25 +41,35 @@ def extract_clip_features(dataset, split, output_path, batch_size=32, num_worker
                 writer.writerow(features.cpu().tolist())
 
 def main():
-    parser = argparse.ArgumentParser(description='Extract CLIP features from dataset')
-    parser.add_argument("--dataset", type=str, default="imagenet", help="Dataset name")
+    parser = argparse.ArgumentParser(description='Extract feature vectors from dataset')
+    parser.add_argument("--feature_type", type=str, default='CLIP')
+    parser.add_argument("--dataset", type=str, default="cifar100", help="Dataset name")
     parser.add_argument("--split", type=str, default="train", help="Dataset split (train/val)")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for processing")
     parser.add_argument("--num_workers", type=int, default=1, help="Number of workers for data loading")
     args = parser.parse_args()
 
     # Get dataset and setup output path
-    dataset, _, _ = get_dataset(args)
-    output_path = f"CLIP1_{args.dataset}_{args.split}.csv"
+    dataset = get_dataset(args)
 
-    # Extract features
-    extract_clip_features(
-        dataset, 
-        args.split, 
-        output_path,
-        args.batch_size, 
-        args.num_workers
-    )
+    os.makedirs(FEATURE_DIR, exist_ok='true')
+
+    if(args.feature_type == 'CLIP'):
+        output_path = f"{FEATURE_DIR}/CLIP_{args.dataset}_{args.split}.csv"
+
+        # Extract features
+        extract_clip_features(
+            dataset, 
+            args.split, 
+            output_path,
+            args.batch_size, 
+            args.num_workers
+        )
+
+    elif (args.feature_type == 'low_level'):
+        output_path = f"{FEATURE_DIR}/LL_{args.dataset}_{args.split}.csv"
+        #generate_features()
+
 
 if __name__ == "__main__":
     main()

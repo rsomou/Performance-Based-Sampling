@@ -48,8 +48,7 @@ def get_initial_loaders(dataset, sampling_ratios):
     
     return dataloaders, dataset_sizes
 
-def train_model(model, dataloaders, dataset_sizes, criterion, optimizer, scheduler, num_epochs=25):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def train_model(device, model, dataloaders, dataset_sizes, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
     liveloss = PlotLosses()
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -125,28 +124,44 @@ def train_model(model, dataloaders, dataset_sizes, criterion, optimizer, schedul
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, default="cifar100")
+    parser.add_argument("--dataset", type=str, default="cifar100") 
+    parser.add_argument("--dataset_params", nargs='+', type=str, default=[], help="corruption type")
+
     parser.add_argument("--model", type=str, default="resnet-s")
+    parser.add_argument("--baseline", action="store_true", default=False)
+    parser.add_argument("--random_w", action="store_true", default=False)
+
     parser.add_argument("--cluster_assignment_file", type=str, default="")
-    parser.add_argument("--epochs", type=int, default=7)
+    parser.add_argument("--epochs", type=int, default=5)
 
     # Clustering and Sampling Parameters
     parser.add_argument("--atoms", type=int, default=50)
     parser.add_argument("--sparsity", type=int, default=15)
-    parser.add_argument("--baseline", action="store_true", default=False) 
-    parser.add_argument("--base", type=str, default="resnet-s")
     parser.add_argument("--epsilon", type=float, default=0)
     parser.add_argument("--sampling_formula", type=str, default="exp_dis")
     
-     
+    """
+  
+    getting model architecture parameters: model, dataset, random_w
+    training regime: baseline (if not baseline: use cluster assignment with sampling formula to finetune)
+    clustering parameters: atoms, entropy, metric, sparsity
+    dataset loading parameters: dataset, dataset_params
+
+    """
+
     args = parser.parse_args()
 
-    dataset, bbox_data, counts = get_dataset(args)
+    if args.baseline and args.cluster_assignment_file != "":
+        print("If you're using Baseline, then dont provide assignments")
+        sys.exit(1)
+
+
+    dataset = get_dataset(args)
     sampling_ratios = generate_sampling_ratios(args, len(dataset['train']), args.cluster_assignment_file, args.sampling_formula)
     loaders, sizes = get_initial_loaders(dataset, sampling_ratios)
     
     # Use new model architecture function
-    model = get_model_architecture(args.model, args.dataset)
+    model = get_model_architecture(args)
     
     criterion = nn.CrossEntropyLoss()
     optimizer_ft = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
@@ -154,7 +169,7 @@ if __name__ == "__main__":
     model.to(device)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=args.epochs, gamma=0.1)
 
-    model = train_model(model, loaders, sizes, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=args.epochs)
+    model = train_model(device, model, loaders, sizes, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=args.epochs)
     
     # Use new save path function
     save_path = get_model_save_path(args)

@@ -81,7 +81,7 @@ def get_dataset(args):
     """
     Centralized dataset loading function
     """
-    dataset_name = args.dataset_v if hasattr(args, 'dataset_v') else args.dataset
+    dataset_name = args.dataset
     
     if dataset_name == "imagenet":
         return get_dataset_imagenet(DATASET_PATHS["imagenet"])

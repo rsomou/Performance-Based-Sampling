@@ -165,13 +165,17 @@ def mapping(emm_matrix, data):
     return mp
       
 
-def nnk_clustering(emm_matrix, data, model, ds, epochs, atoms, top_k, metric, ep):
+def nnk_clustering(emm_matrix, data, model, args):
+    
     """
     Perform NNK clustering within each class.
     
     Args:
         emm_matrix: numpy array of embeddings (num_samples x embedding_dim)
         data: list of dictionaries containing 'image' and 'label' keys (pre provided split (train or valid or test))
+
+        -- Config Arguements
+
         ds: dataset name (string)
         epochs: number of clustering epochs
         sparsity: sparsity parameter (not used)
@@ -179,6 +183,8 @@ def nnk_clustering(emm_matrix, data, model, ds, epochs, atoms, top_k, metric, ep
         top_k: k nearest neighbors
         ep: epsilon parameter
     """
+
+    model_name, ds_name, epochs, atoms, top_k, metric, ep = args.model, args.dataset, args.epochs, args.atoms, args.sparsity, args.metric, args.entropy
     start_time = time.time()
     
     # Create class-wise indices and embeddings
@@ -192,14 +198,11 @@ def nnk_clustering(emm_matrix, data, model, ds, epochs, atoms, top_k, metric, ep
         class_embeddings[label].append(embedding)
     
     # Prepare output file
-    cluster_file =  CLUSTERS_DIR + "/" + ds + "-assignments.csv"
+    cluster_file =  CLUSTERS_DIR + f"{ds_name}-{model_name}-{ep}-{atoms}-{top_k}-assignments.csv"
     os.makedirs(os.path.dirname(cluster_file), exist_ok=True)
     if os.path.exists(cluster_file):
         os.remove(cluster_file)
     
-    assignments = []
-    
-    # Cluster each class separately
     with open(cluster_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
@@ -282,6 +285,7 @@ def eval_cluster(model, dataset_indices, dataset):
 def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
    
     if args.baseline or args.cluster_assignment_file == "":
+        print("Default Sampling Ratios Loaded")
         sampling_ratios = [1] * ds_len
         return sampling_ratios
     

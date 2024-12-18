@@ -13,7 +13,7 @@ CIFARC_ROOT = "./data/cifar100c"
 TINYIMAGENETC_ROOT = "./data/tinyimagenetc"
 MODEL_DIR = "./models"
 
-def get_model_architecture(model_name, dataset_name):
+def get_model_architecture(args):
     """
     Creates model architecture based on model name and dataset.
     
@@ -24,8 +24,13 @@ def get_model_architecture(model_name, dataset_name):
     Returns:
         torch.nn.Module: Initialized model
     """
+
+    model_name = args.model
+    dataset_name = args.dataset
+    random = args.random_w
+
     if model_name == "deit":
-        model = vit_b_16(weights=ViT_B_16_Weights)
+        model = vit_b_16(weights=ViT_B_16_Weights) if not random else vit_b_16(weights=None)
         output_features = {
             "imagenet": 200,
             "cifar100": 100,
@@ -40,7 +45,7 @@ def get_model_architecture(model_name, dataset_name):
             bias=True
         )
     else:  # ResNet
-        model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+        model = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2) if not random else resnet50(weights=None)
         output_features = {
             "imagenet": 200,
             "cifar100": 100,
