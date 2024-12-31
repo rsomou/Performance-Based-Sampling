@@ -109,6 +109,8 @@ if __name__ == "__main__":
     if(args.eval_var):
         mean_v, class_vs = evaluate_cluster_variance(args.cluster_assignment_file, model, dataset['train'])
         print(f"Mean Variance from {save_path}: {mean_v:.4f}")
+        for i,c_v in enumerate(class_vs):
+            print(f"Class {i} Variance: {c_v}", end=", " if i<len(class_vs)-1 else "")
     else:   
         # Evaluate model performance
         print(f"Evaluating model {save_path} performance")
