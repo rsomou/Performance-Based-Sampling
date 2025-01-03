@@ -26,10 +26,11 @@ def get_dataset_celebA(path):
         label_counts = defaultdict(int)
         
         for img, target in tqdm(dataset):
-            label = int(target[9])  # blonde hair attribute
-            images.append(img)
-            labels.append(label)
-            label_counts[label] += 1
+            with img: # This will auto-close the image
+                label = int(target[9])
+                images.append(img.copy()) # Make a copy before closing
+                labels.append(label)
+                label_counts[label] += 1
             
         return images, labels, dict(label_counts)
 
@@ -48,7 +49,7 @@ def get_dataset_celebA(path):
 if __name__ == "__main__":
     try:
         gc.collect()
-        dataset, _, counts = get_dataset_celebA("/celebA")
+        dataset, _, counts = get_dataset_celebA("./celebA")
         print("\nDataset loaded successfully!")
         print(f"Training samples: {len(dataset['train'])}")
         print(f"Validation samples: {len(dataset['val'])}")
