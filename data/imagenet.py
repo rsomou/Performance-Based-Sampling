@@ -78,36 +78,30 @@ class TinyImageNetDataset(Dataset):
     def _load_and_transform_image(self, image_path):
         """Load and transform an image."""
         try:
-            image = Image.open(image_path)
-            if image.mode != 'RGB':
-                image = image.convert('RGB')
-            if image.size != (IMAGE_SIZE, IMAGE_SIZE):
-                image = image.resize((IMAGE_SIZE, IMAGE_SIZE))
-            return image
+            with Image.open(image_path) as image:
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                if image.size != (IMAGE_SIZE, IMAGE_SIZE):
+                    image = image.resize((IMAGE_SIZE, IMAGE_SIZE))
+                return self.transform(image)
         except Exception as e:
             print(f"Error loading image {image_path}: {str(e)}")
-            return Image.new('RGB', (IMAGE_SIZE, IMAGE_SIZE))
+            return self.transform(Image.new('RGB', (IMAGE_SIZE, IMAGE_SIZE)))
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         image = self._load_and_transform_image(self.images[idx])
-        return image, self.labels[idx]
+        return {"image": image, "label": self.labels[idx]}
 
 def get_dataset_imagenet(path):
     """Load and process the Tiny ImageNet dataset."""
     download_dataset(IMAGES_URL, path)
     
-    dataset = {"train": [], "valid": []}
-    
-    train_dataset = TinyImageNetDataset(path, is_train=True)
-    val_dataset = TinyImageNetDataset(path, is_train=False)
-    
-    for img, lab in train_dataset:
-        dataset["train"].append({"image": img, "label": lab})
-    
-    for img, lab in val_dataset:
-        dataset["valid"].append({"image": img, "label": lab})
+    dataset = {
+        "train": TinyImageNetDataset(path, is_train=True),
+        "valid": TinyImageNetDataset(path, is_train=False)
+    }
     
     return dataset
