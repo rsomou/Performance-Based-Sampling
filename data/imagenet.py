@@ -1,107 +1,113 @@
 import os
 import requests
 import zipfile
+import pandas as pd
 from io import BytesIO
 from PIL import Image
-import torch
-from torchvision import transforms
-from torch.utils.data import Dataset
 
-IMAGES_URL = 'http://cs231n.stanford.edu/tiny-imagenet-200.zip'
-DATASET_NAME = 'tiny-imagenet-200'
-IMAGE_SIZE = 64
+DATASET_NAME = "tiny-imagenet-200"
+IMAGES_URL = "http://cs231n.stanford.edu/tiny-imagenet-200.zip"
 
-def download_dataset(url, base_path):
-    """Downloads and extracts the Tiny ImageNet dataset if not already present."""
-    dataset_path = os.path.join(base_path, DATASET_NAME)
-    if os.path.exists(dataset_path):
-        print('Dataset already downloaded...')
+def download_and_fix_structure(base_path):
+    """
+    Downloads Tiny ImageNet if not present, and ensures the folder structure:
+        ./data/
+          └─ tiny-imagenet-200/
+              ├─ train/
+              ├─ val/
+              ...
+    with no double-nesting.
+    """
+    dataset_dir = os.path.join(base_path, DATASET_NAME)
+    train_dir = os.path.join(dataset_dir, 'train')
+
+    # If train folder exists, assume it's already correct.
+    if os.path.exists(train_dir):
+        print("Tiny ImageNet dataset already present.")
         return
-    
+
+    # Otherwise, download and extract
     os.makedirs(base_path, exist_ok=True)
-    print('Downloading ' + url)
-    response = requests.get(url, stream=True)
+    print(f"Downloading {IMAGES_URL} ...")
+    response = requests.get(IMAGES_URL, stream=True)
     with zipfile.ZipFile(BytesIO(response.content)) as zip_ref:
         zip_ref.extractall(base_path)
+    print(f"Downloaded and extracted {DATASET_NAME} to {base_path}.")
 
-class TinyImageNetDataset(Dataset):
-    def __init__(self, base_path, is_train=True):
-        self.base_path = os.path.join(base_path, DATASET_NAME)
-        self.transform = transforms.Compose([
-            transforms.ToTensor()
-        ])
-        self.is_train = is_train
-        
-        if is_train:
-            self.root_dir = os.path.join(self.base_path, 'train')
-            self._setup_train_data()
-        else:
-            self.root_dir = os.path.join(self.base_path, 'val')
-            self._setup_val_data()
+    # Check for double nesting: base_path/tiny-imagenet-200/tiny-imagenet-200
+    nested_dir = os.path.join(dataset_dir, DATASET_NAME)
+    if os.path.exists(nested_dir):
+        # Move everything up one level
+        for item in os.listdir(nested_dir):
+            os.rename(os.path.join(nested_dir, item),
+                      os.path.join(dataset_dir, item))
+        os.rmdir(nested_dir)
+        print("Fixed double-nested folder structure.")
 
-    def _setup_train_data(self):
-        """Set up training data."""
-        self.classes = sorted([d for d in os.listdir(self.root_dir) 
-                     if os.path.isdir(os.path.join(self.root_dir, d))])
-        self.class_to_idx = {cls: idx for idx, cls in enumerate(self.classes)}
-        
-        self.images = []
-        self.labels = []
-        
-        for class_name in self.classes:
-            class_dir = os.path.join(self.root_dir, class_name, 'images')
-            for image_name in os.listdir(class_dir):
-                self.images.append(os.path.join(class_dir, image_name))
-                self.labels.append(self.class_to_idx[class_name])
+def get_dataset_imagenet(base_path):
+    """
+    Returns a dictionary with the same structure as the CIFAR example:
+        {
+          "train": [
+             {"image": PIL.Image, "label": int},
+             {"image": PIL.Image, "label": int},
+             ...
+          ],
+          "valid": [
+             {"image": PIL.Image, "label": int},
+             ...
+          ]
+        }
+    NOTE: This loads all images as PIL objects into memory, 
+    which can be large for Tiny ImageNet.
+    """
+    download_and_fix_structure(base_path)
+    dataset_dir = os.path.join(base_path, DATASET_NAME)
+    train_dir = os.path.join(dataset_dir, "train")
+    val_dir = os.path.join(dataset_dir, "val")
 
-    def _setup_val_data(self):
-        """Set up validation data."""
-        val_annotations_file = os.path.join(self.root_dir, 'val_annotations.txt')
-        self.images = []
-        self.labels = []
-        
-        # Get class mapping from training data
-        train_path = os.path.join(self.base_path, 'train')
-        train_classes = sorted([d for d in os.listdir(train_path) 
-                             if os.path.isdir(os.path.join(train_path, d))])
-        self.class_to_idx = {cls: idx for idx, cls in enumerate(train_classes)}
-        
-        # Read validation annotations
-        with open(val_annotations_file, 'r') as f:
-            for line in f:
-                img_name, class_name = line.strip().split()[:2]
-                img_path = os.path.join(self.root_dir, 'images', img_name)
-                if os.path.exists(img_path):
-                    self.images.append(img_path)
-                    self.labels.append(self.class_to_idx[class_name])
+    # 1. Build class -> idx mapping from train folder
+    classes = sorted([
+        d for d in os.listdir(train_dir)
+        if os.path.isdir(os.path.join(train_dir, d))
+    ])
+    class_to_idx = {cls_name: idx for idx, cls_name in enumerate(classes)}
 
-    def _load_and_transform_image(self, image_path):
-        """Load and transform an image."""
-        try:
-            with Image.open(image_path) as image:
-                if image.mode != 'RGB':
-                    image = image.convert('RGB')
-                if image.size != (IMAGE_SIZE, IMAGE_SIZE):
-                    image = image.resize((IMAGE_SIZE, IMAGE_SIZE))
-                return self.transform(image)
-        except Exception as e:
-            print(f"Error loading image {image_path}: {str(e)}")
-            return self.transform(Image.new('RGB', (IMAGE_SIZE, IMAGE_SIZE)))
+    # Prepare our final structure
+    dataset = {"train": [], "valid": []}
 
-    def __len__(self):
-        return len(self.images)
+    # 2. Populate "train" list with {"image": <PIL>, "label": <int>}
+    for cls_name in classes:
+        cls_idx = class_to_idx[cls_name]
+        images_dir = os.path.join(train_dir, cls_name, "images")
+        for fname in os.listdir(images_dir):
+            if fname.lower().endswith((".jpg", ".jpeg", ".png")):
+                fpath = os.path.join(images_dir, fname)
+                # Load the image as PIL
+                img = Image.open(fpath).convert("RGB")
+                dataset["train"].append({
+                    "image": img,
+                    "label": cls_idx
+                })
 
-    def __getitem__(self, idx):
-        image = self._load_and_transform_image(self.images[idx])
-        return {"image": image, "label": self.labels[idx]}
+    # 3. Populate "valid" list using val_annotations.txt
+    val_anno_path = os.path.join(val_dir, "val_annotations.txt")
+    val_df = pd.read_csv(
+        val_anno_path, sep='\t', header=None,
+        names=["File", "Class", "X", "Y", "W", "H"]
+    )
+    for _, row in val_df.iterrows():
+        fname = row["File"]
+        cls_name = row["Class"]
+        if cls_name not in class_to_idx:
+            # Ideally should not happen, but just in case
+            continue
 
-def get_dataset_imagenet(path):
-    """Load and process the Tiny ImageNet dataset."""
-    download_dataset(IMAGES_URL, path)
-    
-    dataset = {
-        "train": TinyImageNetDataset(path, is_train=True),
-        "valid": TinyImageNetDataset(path, is_train=False)
-    }
-    
+        fpath = os.path.join(val_dir, "images", fname)
+        img = Image.open(fpath).convert("RGB")
+        dataset["valid"].append({
+            "image": img,
+            "label": class_to_idx[cls_name]
+        })
+
     return dataset
