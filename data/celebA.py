@@ -44,7 +44,7 @@ def get_dataset_celebA(path):
         all_data[split] = [{"image": img, "label": lbl} for img, lbl in zip(images, labels)]
         all_counts[split] = counts
     
-    return all_data, None, all_counts
+    return all_data
 
 if __name__ == "__main__":
     try:
