@@ -52,9 +52,9 @@ if __name__ == "__main__":
         dataset, _, counts = get_dataset_celebA("./celebA")
         print("\nDataset loaded successfully!")
         print(f"Training samples: {len(dataset['train'])}")
-        print(f"Validation samples: {len(dataset['val'])}")
+        print(f"Validation samples: {len(dataset['valid'])}")
         print("\nLabel distribution:")
         print("Training set:", counts['train'])
-        print("Validation set:", counts['val'])
+        print("Validation set:", counts['valid'])
     except Exception as e:
         print(f"Error loading dataset: {str(e)}")
