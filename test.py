@@ -107,10 +107,19 @@ if __name__ == "__main__":
     model.load_state_dict(state_dict)
     
     if(args.eval_var):
-        mean_v, class_vs = evaluate_cluster_variance(args.cluster_assignment_file, model, dataset['train'])
+        mean_v, class_vs, min_acc, sizes = evaluate_cluster_variance(args.cluster_assignment_file, model, dataset['train'])
         print(f"Mean Variance from {save_path}: {mean_v:.4f}")
         for i,c_v in enumerate(class_vs):
             print(f"Class {i} Variance: {c_v}", end=", " if i<len(class_vs)-1 else "")
+            print("\n")
+
+        for i in range(len(min_acc)):
+            print(f"Class {i} Minimum Accuracy: {min_acc[i]}", end=", " if i<len(class_vs)-1 else "")
+            print("\n")
+            print(f"Class {i} Sizes: ")
+            print("\n")
+            for k,v in sizes[i]:
+                print(f"Cluster {k} Size: {v}")
     else:   
         # Evaluate model performance
         print(f"Evaluating model {save_path} performance")

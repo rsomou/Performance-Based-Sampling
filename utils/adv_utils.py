@@ -399,19 +399,28 @@ def evaluate_cluster_variance(cluster_file, model, data):
     
     # Calculate variance for each class
     class_variances = []
-    
+    min_class_acc = []
+    size_clusters = []
+
     for class_id, clusters in class_clusters.items():
         cluster_accuracies = []
+        min_acc = 101
+        sizes = {}
         for cluster_id, indices in clusters.items():
             if len(indices) > 0:
                 acc = eval_cluster(model, indices, data)
+                sizes[cluster_id] = len(indices)
+                min_acc = min(min_acc, acc)
                 cluster_accuracies.append(acc)
         
         if len(cluster_accuracies) > 1:  # Need at least 2 clusters to compute variance
             variance = np.var(cluster_accuracies)
             class_variances.append(variance)
             print(f"Class {class_id} variance: {variance:.4f}")
+        
+        min_class_acc.append(min_acc)
+        size_clusters.append(sizes)
     
     mean_variance = np.mean(class_variances) if class_variances else 0
     
-    return mean_variance, class_variances
+    return mean_variance, class_variances, min_class_acc, size_clusters
