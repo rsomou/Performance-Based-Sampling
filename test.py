@@ -118,7 +118,7 @@ if __name__ == "__main__":
             print("\n")
             print(f"Class {i} Sizes: ")
             print("\n")
-            for k,v in sizes[i]:
+            for k,v in sizes[i].items():
                 print(f"Cluster {k} Size: {v}")
     else:   
         # Evaluate model performance
