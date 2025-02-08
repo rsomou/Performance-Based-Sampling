@@ -111,15 +111,15 @@ if __name__ == "__main__":
         print(f"Mean Variance from {save_path}: {mean_v:.4f}")
         for i,c_v in enumerate(class_vs):
             print(f"Class {i} Variance: {c_v}", end=", " if i<len(class_vs)-1 else "")
-            print("\n")
-
+        print("\n")
         for i in range(len(min_acc)):
             print(f"Class {i} Minimum Accuracy: {min_acc[i]}", end=", " if i<len(class_vs)-1 else "")
             print("\n")
-            print(f"Class {i} Sizes: ")
+            print(f"Class {i} Statistics: ")
             print("\n")
             for k,v in sizes[i].items():
-                print(f"Cluster {k} Size: {v} ")
+                print(f"Cluster {k} Stats: Size {v[0]}, Acc: {v[1]} ")
+            print("\n")
     else:   
         # Evaluate model performance
         print(f"Evaluating model {save_path} performance")

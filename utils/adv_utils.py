@@ -357,7 +357,7 @@ def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
             class_to_avg_acc[class_idx] = avg_acc
 
 
-        a = 0.7 # Tunable parameter
+        a = 0.8 # Tunable parameter
         sampling_ratios = []
         for entry in asgn_mp:
             class_idx = entry['class_idx']
@@ -366,7 +366,7 @@ def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
             acc_mean = class_to_avg_acc[class_idx]
 
             # Sampling ratio formula
-            sampling_ratio = np.clip(np.exp((acc_mean - acc) / a),1,2.5)
+            sampling_ratio = np.clip(np.exp((acc_mean - acc) / a),1,2.75)
             sampling_ratios.append(sampling_ratio)
 
         return sampling_ratios
@@ -400,16 +400,16 @@ def evaluate_cluster_variance(cluster_file, model, data):
     # Calculate variance for each class
     class_variances = []
     min_class_acc = []
-    size_clusters = []
+    cluster_stats = []
 
     for class_id, clusters in class_clusters.items():
         cluster_accuracies = []
         min_acc = 101
-        sizes = {}
+        stats = {}
         for cluster_id, indices in clusters.items():
             if len(indices) > 0:
                 acc = eval_cluster(model, indices, data)
-                sizes[cluster_id] = len(indices)
+                stats[cluster_id] = (len(indices), acc)
                 min_acc = min(min_acc, acc)
                 cluster_accuracies.append(acc)
         
@@ -419,8 +419,8 @@ def evaluate_cluster_variance(cluster_file, model, data):
             print(f"Class {class_id} variance: {variance:.4f}")
         
         min_class_acc.append(min_acc)
-        size_clusters.append(sizes)
+        cluster_stats.append(stats)
     
     mean_variance = np.mean(class_variances) if class_variances else 0
     
-    return mean_variance, class_variances, min_class_acc, size_clusters
+    return mean_variance, class_variances, min_class_acc, cluster_stats
