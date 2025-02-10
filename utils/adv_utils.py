@@ -29,93 +29,11 @@ from utils.models import (
 )
 
 from utils.nnk import NNKMU
-from utils.features import contrast, color_distrib, bbox_area, hex_to_rgb
+from utils.features import contrast, color_distrib
 
 
 CLUSTERS_DIR = "./clustering/"
 
-color_dict = {
-    "#000000": "black",
-    "#FFFFFF": "white",
-    "#808080": "gray",
-    "#FF0000": "red",
-    "#FFA500": "orange",
-    "#FFFF00": "yellow",
-    "#008000": "green",
-    "#0000FF": "blue",
-    "#800080": "purple",
-    "#FFC0CB": "pink",
-    "#A52A2A": "brown"
-}
-
-names = list(color_dict.values())
-rgb_values = [hex_to_rgb(hex_color) for hex_color in color_dict.keys()]
-
-kdt_db = KDTree(rgb_values)
-
-def contrast(image):
-    r_coeff = 0.2989
-    g_coeff = 0.5870
-    b_coeff = 0.1140
-    gray_image = (image[..., 0] * r_coeff +
-                  image[..., 1] * g_coeff +
-                  image[..., 2] * b_coeff)
-    return gray_image.std()
-
-def convert_rgb_to_names(rgb_array):
-    _, indices = kdt_db.query(rgb_array)
-    return np.array(names)[indices]
-
-def color_distrib(image):
-
-    if image.size == 4096:  # Grayscale image check
-        # Optional: Convert grayscale to RGB (simple replication across channels)
-        reshaped_image = np.stack((image,)*3, axis=-1).reshape(-1, 3)
-    else:
-        # Reshape assuming it's already an RGB image
-        reshaped_image = np.reshape(image, (-1, 3))
-
-    # Convert RGB values to color names using vectorized operation
-    color_names = convert_rgb_to_names(reshaped_image)
-
-    # Calculate the frequency distribution of color names
-    unique, counts = np.unique(color_names, return_counts=True)
-    color_distribution = dict(zip(unique, counts))
-
-    # Create a distribution array
-    distrib = np.array([color_distribution.get(color, 0) for color in names])
-
-    # Normalize the distribution to sum to 1
-    distrib_normalized = distrib / np.sum(distrib)
-    return distrib_normalized
-
-def gabor(sigma, theta, Lambda, psi, gamma):
-    """Gabor feature extraction."""
-    sigma_x = sigma
-    sigma_y = float(sigma) / gamma
-
-    # Bounding box
-    nstds = 3  # Number of standard deviations
-    xmax = max(
-        abs(nstds * sigma_x * np.cos(theta)), abs(nstds * sigma_y * np.sin(theta))
-    )
-    xmax = np.ceil(max(1, xmax))
-    ymax = max(
-        abs(nstds * sigma_x * np.sin(theta)), abs(nstds * sigma_y * np.cos(theta))
-    )
-    ymax = np.ceil(max(1, ymax))
-    xmin = -xmax
-    ymin = -ymax
-    (y, x) = np.meshgrid(np.arange(ymin, ymax + 1), np.arange(xmin, xmax + 1))
-
-    # Rotation
-    x_theta = x * np.cos(theta) + y * np.sin(theta)
-    y_theta = -x * np.sin(theta) + y * np.cos(theta)
-
-    gb = np.exp(
-        -0.5 * (x_theta**2 / sigma_x**2 + y_theta**2 / sigma_y**2)
-    ) * np.cos(2 * np.pi / Lambda * x_theta + psi)
-    return gb
 
 
 #haven't touched
@@ -144,22 +62,10 @@ def generate_features(training_data, ds, output):
             # 3. Compute the contrast (single scalar)
             contr = contrast(np_img)
 
-            # 4. Generate a Gabor filter (example parameters)
-            #    Typically, you'd convolve this with the image or compute some statistic;
-            #    for demonstration, we'll just flatten the filter itself.
-            gb_filter = gabor(
-                sigma=1.0,   # std. deviation
-                theta=0,     # orientation in radians
-                Lambda=10.0, # wavelength
-                psi=0,       # phase offset
-                gamma=0.5    # aspect ratio
-            )
-            gb_flat = gb_filter.flatten()  # Flatten the 2D kernel
+            # 4. Concatenate all features into one row vector
+            #    (color distribution, contrast)
 
-            # 5. Concatenate all features into one row vector
-            #    (color distribution, contrast, gabor filter)
-
-            writer.writerow(np.concatenate([cdist, [contr], gb_flat]).tolist())
+            writer.writerow(np.concatenate([cdist, [contr]]).tolist())
 
     print(f"Features saved to {output}")
   
