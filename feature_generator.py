@@ -6,7 +6,7 @@ from transformers import AutoProcessor, CLIPModel
 import csv
 from tqdm import tqdm
 import os
-import utils.adv_utils
+from utils.adv_utils import generate_features
 
 FEATURE_DIR = './features'
 def extract_clip_features(dataset, split, output_path, batch_size=32, num_workers=8):
@@ -68,7 +68,11 @@ def main():
 
     elif (args.feature_type == 'low_level'):
         output_path = f"{FEATURE_DIR}/LL_{args.dataset}_{args.split}.csv"
-        #generate_features()
+        generate_features(
+            dataset,
+            args.split,
+            output_path
+        )
 
 
 if __name__ == "__main__":

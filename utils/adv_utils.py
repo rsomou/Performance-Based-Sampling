@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader, Subset
 import csv
 import time
 from scipy.spatial import KDTree
+from PIL import Image
 
 import argparse
 
@@ -33,126 +34,134 @@ from utils.features import contrast, color_distrib, bbox_area, hex_to_rgb
 
 CLUSTERS_DIR = "./clustering/"
 
+color_dict = {
+    "#000000": "black",
+    "#FFFFFF": "white",
+    "#808080": "gray",
+    "#FF0000": "red",
+    "#FFA500": "orange",
+    "#FFFF00": "yellow",
+    "#008000": "green",
+    "#0000FF": "blue",
+    "#800080": "purple",
+    "#FFC0CB": "pink",
+    "#A52A2A": "brown"
+}
+
+names = list(color_dict.values())
+rgb_values = [hex_to_rgb(hex_color) for hex_color in color_dict.keys()]
+
+kdt_db = KDTree(rgb_values)
+
+def contrast(image):
+    r_coeff = 0.2989
+    g_coeff = 0.5870
+    b_coeff = 0.1140
+    gray_image = (image[..., 0] * r_coeff +
+                  image[..., 1] * g_coeff +
+                  image[..., 2] * b_coeff)
+    return gray_image.std()
+
+def convert_rgb_to_names(rgb_array):
+    _, indices = kdt_db.query(rgb_array)
+    return np.array(names)[indices]
+
+def color_distrib(image):
+
+    if image.size == 4096:  # Grayscale image check
+        # Optional: Convert grayscale to RGB (simple replication across channels)
+        reshaped_image = np.stack((image,)*3, axis=-1).reshape(-1, 3)
+    else:
+        # Reshape assuming it's already an RGB image
+        reshaped_image = np.reshape(image, (-1, 3))
+
+    # Convert RGB values to color names using vectorized operation
+    color_names = convert_rgb_to_names(reshaped_image)
+
+    # Calculate the frequency distribution of color names
+    unique, counts = np.unique(color_names, return_counts=True)
+    color_distribution = dict(zip(unique, counts))
+
+    # Create a distribution array
+    distrib = np.array([color_distribution.get(color, 0) for color in names])
+
+    # Normalize the distribution to sum to 1
+    distrib_normalized = distrib / np.sum(distrib)
+    return distrib_normalized
+
+def gabor(sigma, theta, Lambda, psi, gamma):
+    """Gabor feature extraction."""
+    sigma_x = sigma
+    sigma_y = float(sigma) / gamma
+
+    # Bounding box
+    nstds = 3  # Number of standard deviations
+    xmax = max(
+        abs(nstds * sigma_x * np.cos(theta)), abs(nstds * sigma_y * np.sin(theta))
+    )
+    xmax = np.ceil(max(1, xmax))
+    ymax = max(
+        abs(nstds * sigma_x * np.sin(theta)), abs(nstds * sigma_y * np.cos(theta))
+    )
+    ymax = np.ceil(max(1, ymax))
+    xmin = -xmax
+    ymin = -ymax
+    (y, x) = np.meshgrid(np.arange(ymin, ymax + 1), np.arange(xmin, xmax + 1))
+
+    # Rotation
+    x_theta = x * np.cos(theta) + y * np.sin(theta)
+    y_theta = -x * np.sin(theta) + y * np.cos(theta)
+
+    gb = np.exp(
+        -0.5 * (x_theta**2 / sigma_x**2 + y_theta**2 / sigma_y**2)
+    ) * np.cos(2 * np.pi / Lambda * x_theta + psi)
+    return gb
+
+
 #haven't touched
-def generate_features(training_data, val_data, bbox, features, ds): 
-  train_vecs = []
+def generate_features(training_data, ds, output):
+    """
+    Generate a matrix of low-level features (color distribution, contrast, Gabor)
+    for each image in the specified dataset split (train or valid). 
+    Each row is a flattened feature vector, optionally followed by a label.
 
-  fts = ["contrast", "color", "size", "CLIP"]
-  #if all(ft not in features for ft in fts):
-    #raise ValueError("Invalid feature(s)- please select atleast 1 out of [CLIP, contrast, color, size]")
-  
-  if "contrast" in features:
-    if not os.path.exists(featuresroot + "/" + ds + "_contrast_t"):
-      contrast_results_t = np.zeros((len(training_data),1))
-      # contrast_results_v = np.zeros((len(val_data),1))
+    :param training_data: A dict like {"train": [...], "valid": [...]}, 
+                          each containing a list of {"image": PIL.Image, "label": int}.
+    :param ds: A string, either "train" or "valid", indicating which split to use.
+    :param output: A file path to write the features out row by row.
+    """
 
-      for i in range(len(training_data)):
-        print(np.array(training_data[i]))
-        contrast_results_t[i] = contrast(np.array(training_data[i]))
-      max_contrast_t = max(contrast_results_t)
-      for i in range(len(contrast_results_t)):
-        contrast_results_t[i] = contrast_results_t[i]/max_contrast_t
+    with open(output, "w") as f:
+        writer = csv.writer(f)
+        for item in training_data[ds]:
+            # 1. Get the PIL image and convert to numpy
+            pil_img = item["image"]
+            np_img  = np.array(pil_img)  # shape = (H, W, 3) if RGB
 
-      # for i in range(len(val_data)):
-        # contrast_results_v[i] = contrast(np.array(val_data[i]))
-      # max_contrast_v = max(contrast_results_v)
-      # for i in range(len(contrast_results_v)):
-        # contrast_results_v[i] = contrast_results_v[i]/max_contrast_v
+            # 2. Compute the color distribution (returns e.g. a length-11 vector)
+            cdist = color_distrib(np_img)  # Already normalized
 
-      np.savetxt(featuresroot + "/" + ds + "_contrast_t", contrast_results_t, delimiter=",")
-      # np.savetxt(featuresroot + "/" + ds + "_contrast_v", contrast_results_v, delimiter=",")
-    else:
-      contrast_results_t = np.loadtxt(featuresroot + "/" + ds + "_contrast_t", delimiter=",")
-      # contrast_results_v = np.loadtxt(featuresroot + "/" + ds + "_contrast_v", delimiter=",")
-    if len(train_vecs) == 0:
-      train_vecs = contrast_results_t
-    else:
-      train_vecs = np.concatenate((train_vecs, contrast_results_t), axis=1)
-    # val_vecs = np.concatenate((val_vecs, contrast_results_v), axis=1)
-    print("Computed contrasts")
+            # 3. Compute the contrast (single scalar)
+            contr = contrast(np_img)
 
-  if "color" in features:
-    if not os.path.exists(featuresroot + "/" + ds + "_color_t"):
-      
-      color_dict = {
-        "#000000": "black",  # Black
-        "#FFFFFF": "white",  # White
-        "#808080": "gray",   # Gray
-        "#FF0000": "red",    # Red
-        "#FFA500": "orange", # Orange
-        "#FFFF00": "yellow", # Yellow
-        "#008000": "green",  # Green
-        "#0000FF": "blue",   # Blue
-        "#800080": "purple", # Purple
-        "#FFC0CB": "pink",   # Pink
-        "#A52A2A": "brown"   # Brown
-      }
-      
-      color_code = {0: "black", 1: "white", 2: "gray", 3: "red", 4: "orange", 5: "yellow", 6: "green", 7: "blue", 8: "purple", 9: "pink", 10: "brown"}
-      css3_db = color_dict
-      names = []
-      rgb_values = []
-      
-      kdt_db = KDTree(rgb_values)  
-      
-      for color_hex, color_name in css3_db.items():
-        names.append(color_name)
-        rgb_values.append(hex_to_rgb(color_hex))
+            # 4. Generate a Gabor filter (example parameters)
+            #    Typically, you'd convolve this with the image or compute some statistic;
+            #    for demonstration, we'll just flatten the filter itself.
+            gb_filter = gabor(
+                sigma=1.0,   # std. deviation
+                theta=0,     # orientation in radians
+                Lambda=10.0, # wavelength
+                psi=0,       # phase offset
+                gamma=0.5    # aspect ratio
+            )
+            gb_flat = gb_filter.flatten()  # Flatten the 2D kernel
 
-      color_results_t = np.zeros((len(training_data),1))
-      # color_results_v = np.zeros((len(val_data),11))
+            # 5. Concatenate all features into one row vector
+            #    (color distribution, contrast, gabor filter)
 
-      for i in range(len(training_data)):
-        color_results_t[i] = color_distrib(np.array(training_data[i]))
-      max_color_t = max(color_results_t)
-      for i in range(len(color_results_t)):
-        color_results_t[i] = color_results_t[i]/max_color_t
+            writer.writerow(np.concatenate([cdist, [contr], gb_flat]).tolist())
 
-      # for i in range(len(val_data)):
-        # color_results_v[i] = color_distrib(np.array(val_data[i]))
-      # max_color_v = max(color_results_v)
-      # for i in range(len(color_results_v)):
-        # colorresults_v[i] = color_results_v[i]/max_color_v
-
-      np.savetxt(featuresroot + "/" + ds + "_color_t", color_results_t, delimiter=",")
-      # np.savetxt(featuresroot + "/" + ds + "_color_v", color_results_v, delimiter=",")
-    else:
-      color_results_t = np.loadtxt(featuresroot + "/" + ds + "_color_t", delimiter=",")
-      # color_results_v = np.loadtxt(featuresroot + "/" + ds + "_color_v", delimiter=",")
-    if len(train_vecs) == 0:
-      train_vecs = color_results_t
-    else:
-      train_vecs = np.concatenate((train_vecs, color_results_t), axis=1)
-    # val_vecs = np.concatenate((val_vecs, color_results_v), axis=1)
-    print("Computed color distributions")
-
-  if "size" in features and ds == "imagenet":
-    if not os.path.exists(featuresroot + "/" + ds + "_size_t"):
-      if os.path.exists(featuresroot + "/" + ds + "_size_t"):
-        bbox_results_t = np.zeros((len(training_data),1))
-        # bbox_results_v = np.zeros((len(val_data),11))
-
-      for i in range(len(training_data)):
-        bbox_results_t[i] = bbox_area(bbox_data["train"][i])
-      max_size_t = max(bbox_results_t)
-      for i in range(len(bbox_results_t)):
-        bbox_results_t[i] = bbox_results_t[i]/max_size_t
-
-      # for i in range(len(val_data)):
-        # bbox_results_v[i] = bbox_area(bbox_data["val"][i])
-      # max_size_v = max(bbox_results_v)
-      # for i in range(len(bbox_results_v)):
-        # bbox_results_v[i] = bbox_results_v[i]/max_size_v
-
-      np.savetxt(featuresroot + "/" + ds + "_size_t", bbox_results_t, delimiter=",")
-      # np.savetxt(featuresroot + "/" + ds + "_size_v", bbox_results_v, delimiter=",")
-    else:
-      bbox_results_t = np.loadtxt(featuresroot + "/" + ds + "_size_t", delimiter=",")
-      # bbox_results_v = np.loadtxt(featuresroot + "/" + ds + "_size_v", delimiter=",")
-    train_vecs = np.concatenate((train_vecs, bbox_results_t), axis=1)
-    # val_vecs = np.concatenate((val_vecs, bbox_results_v), axis=1)
-
-  return train_vecs
+    print(f"Features saved to {output}")
   
 
 def mapping(emm_matrix, data):
