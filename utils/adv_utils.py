@@ -281,7 +281,7 @@ def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
             acc_mean = class_to_avg_acc[class_idx]
 
             # Sampling ratio formula
-            sampling_ratio = np.clip(np.exp((acc_mean - acc) / a),1,2.75)
+            sampling_ratio = np.clip(np.exp((acc_mean - acc) / a),0.8,2.75)
             sampling_ratios.append(sampling_ratio)
 
         return sampling_ratios
