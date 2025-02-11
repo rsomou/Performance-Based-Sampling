@@ -57,7 +57,7 @@ def get_test_celebA(path):
     
     for image, labels in tqdm(dataset):
         with image:
-            test_data_attr_30[int(labels[30])].append({"image": image, "label": int(labels[9])})
+            test_data_attr_30[int(labels[30])].append({"image": image.copy(), "label": int(labels[9])})
     
     # Convert defaultdict to list
     return [test_data_attr_30[0], test_data_attr_30[1]]
