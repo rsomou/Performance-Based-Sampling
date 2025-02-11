@@ -61,6 +61,7 @@ def get_test_celebA(path):
 
     for image,labels in tqdm(dataset):
         with image:
+            print(labels[30])
             test_data_attr_30[labels[30]].append({"image":image, "label":labels[9]})
 
     return test_data_attr_30
