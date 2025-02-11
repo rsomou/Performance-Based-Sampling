@@ -48,22 +48,19 @@ def test_model(dataset, model, split):
     return correct, total
 
 def get_test_celebA(path):
-    """
-    Get CelebA dataset using torchvision
-    Returns formatted dataset with images and blond hair labels (attr_index 9 for blonde hair)
-    Includes all three splits: train, valid, test
-    """
+
     print("Loading CelebA dataset...")
-    
-
     dataset = datasets.CelebA(root=path, split='test', target_type='attr', download=True)
-    test_data_attr_30 = [] * 2
-
-    for image,labels in tqdm(dataset):
-        with image:
-            test_data_attr_30[labels[30].item()].append({"image":image, "label":labels[9]})
-
-    return test_data_attr_30
+    
+    # Initialize lists using defaultdict
+    test_data_attr_30 = defaultdict(list)
+    
+    for image, labels in tqdm(dataset):
+        # No need for 'with' statement for PIL Images
+        test_data_attr_30[labels[30].item()].append({"image": image, "label": labels[9].item()})
+    
+    # Convert defaultdict to list
+    return [test_data_attr_30[0], test_data_attr_30[1]]
 
 
 def main():
