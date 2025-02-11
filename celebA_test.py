@@ -56,8 +56,8 @@ def get_test_celebA(path):
     test_data_attr_30 = defaultdict(list)
     
     for image, labels in tqdm(dataset):
-        # No need for 'with' statement for PIL Images
-        test_data_attr_30[int(labels[30])].append({"image": image, "label": int(labels[9])})
+        with image:
+            test_data_attr_30[int(labels[30])].append({"image": image, "label": int(labels[9])})
     
     # Convert defaultdict to list
     return [test_data_attr_30[0], test_data_attr_30[1]]
