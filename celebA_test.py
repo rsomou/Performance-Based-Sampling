@@ -90,7 +90,7 @@ def get_test_celebA(path):
             try:
                 image, labels = dataset[idx]
                 test_data_attr_30[labels[30].item()].append({
-                    "image": transforms.functional.pil_to_tensor(image),  # Convert to tensor immediately
+                    "image": image,  # Convert to tensor immediately
                     "label": labels[9].item()
                 })
                 
