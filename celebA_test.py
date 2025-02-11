@@ -7,7 +7,7 @@ import torch
 from torchvision import datasets
 import gc
 from data.Dataset import get_dataset, ImageDataset, transform
-from torch.util.data import DataLoader
+from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50, ResNet50_Weights
