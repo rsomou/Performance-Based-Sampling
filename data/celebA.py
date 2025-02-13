@@ -11,7 +11,7 @@ from tqdm import tqdm
 import gc
 
 
-def get_dataset_celebA(path):
+def get_dataset_celebA(path, samples_per_class = 27000):
     """
     Get CelebA dataset using torchvision
     Returns formatted dataset with images and blond hair labels (attr_index 9 for blonde hair)
@@ -23,11 +23,13 @@ def get_dataset_celebA(path):
         print(f"\nProcessing {split} split...")
         dataset = datasets.CelebA(root=path, split=split, target_type='attr', download=True)
         images, labels = [], []
-        label_counts = defaultdict(int)
+        label_counts = {0:0,1:0}
         
         for img, target in tqdm(dataset):
             with img: # This will auto-close the image
                 label = int(target[9])
+                if(label_counts[0]>samples_per_class and label_counts[1]>samples_per_class):
+                    break
                 images.append(img.copy()) # Make a copy before closing
                 labels.append(label)
                 label_counts[label] += 1
