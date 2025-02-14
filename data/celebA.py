@@ -27,7 +27,7 @@ def get_dataset_celebA(path, samples_per_class = 21000):
         
         for img, target in tqdm(dataset):
             print(label_counts[0], label_counts[1])
-            if(label_counts[0]>=samples_per_class or label_counts[1]>=samples_per_class):
+            if((label_counts[0]>=samples_per_class and int(target[9]) == 0) or (label_counts[1]>=samples_per_class and int(target[9]) == 1)):
                 continue
             with img: # This will auto-close the image
                 label = int(target[9])
