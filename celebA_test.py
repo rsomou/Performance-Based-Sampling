@@ -50,7 +50,7 @@ def test_model(dataset, model, split):
 def get_test_celebA(path):
 
     print("Loading CelebA dataset...")
-    dataset = datasets.CelebA(root=path, split='test', target_type='attr', download=True)
+    dataset = datasets.CelebA(root=path, split='valid', target_type='attr', download=True)
     
     # Initialize lists using defaultdict
     test_data_attr_30 = defaultdict(list)
