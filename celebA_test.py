@@ -90,8 +90,8 @@ def main():
     correct_1, total_1 = test_model(test_data[1], model, "test")
 
     print("Confusion Matrix")
-    print(f"{correct_0} , {total_0-correct_0} \n")
-    print(f"{correct_1} , {total_1-correct_1}")
+    print(f"Acc when attribute 30 is 0: {correct_0/total_0:.4f} , Err rate when attribute 30 is 0: {(total_0-correct_0)/total_0:.4f} \n")
+    print(f"Acc when attribute 30 is 1: {correct_1/total_1:.4f} , Err rate when attribute 30 is 0: {(total_1-correct_1)/total_1:.4f} \n")
     
 
 if __name__ == "__main__":
