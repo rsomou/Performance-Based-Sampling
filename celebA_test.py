@@ -62,6 +62,20 @@ def get_test_celebA(path):
     # Convert defaultdict to list
     return [test_data_attr_30[0], test_data_attr_30[1]]
 
+def bin_celebA(path):
+
+    print("Loading CelebA dataset...")
+    dataset = datasets.CelebA(root=path, split='valid', target_type='attr', download=True)
+    
+    # Initialize lists using defaultdict
+    test_data = defaultdict(list)
+    
+    for image, labels in tqdm(dataset):
+        with image:
+            test_data[(int(labels[30]),int(labels[9]))].append({"image": image.copy(), "label": int(labels[9])})
+    
+    # Convert defaultdict to list
+    return test_data
 
 def main():
     parser = argparse.ArgumentParser()
@@ -84,14 +98,23 @@ def main():
     state = torch.load(args.model_file, map_location=device)
     model.load_state_dict(state)
     
-    test_data = get_test_celebA("./data/celebA")
+    #test_data = get_test_celebA("./data/celebA")
+    test_data = bin_celebA("./data/celebA")
 
-    correct_0, total_0 = test_model(test_data[0], model, "test")
-    correct_1, total_1 = test_model(test_data[1], model, "test")
+    #correct_0, total_0 = test_model(test_data[0], model, "test")
+    #correct_1, total_1 = test_model(test_data[1], model, "test")
+
+    #print(f"Acc when attribute 30 is 0: {correct_0/total_0:.4f} , Err rate when attribute 30 is 0: {(total_0-correct_0)/total_0:.4f} \n")
+    #print(f"Acc when attribute 30 is 1: {correct_1/total_1:.4f} , Err rate when attribute 30 is 0: {(total_1-correct_1)/total_1:.4f} \n")
+
+    correct_11, total_11 = test_model(test_data[(1,1)],model, "test")
+    correct_10, total_10 = test_model(test_data[(1,0)],model, "test")
+    correct_01, total_01 = test_model(test_data[(0,1)],model, "test")
+    correct_00, total_00 = test_model(test_data[(0,0)],model, "test")    
 
     print("Confusion Matrix")
-    print(f"Acc when attribute 30 is 0: {correct_0/total_0:.4f} , Err rate when attribute 30 is 0: {(total_0-correct_0)/total_0:.4f} \n")
-    print(f"Acc when attribute 30 is 1: {correct_1/total_1:.4f} , Err rate when attribute 30 is 0: {(total_1-correct_1)/total_1:.4f} \n")
+    print(f"dark female (label 9: 0, label 3:0 0) Acc: {correct_00/total_00:.4f} , dark male (label 9: 0, label 30: 1): {correct_01/total_01:.4f} \n")
+    print(f"blonde female (label 9: 1, label 30: 0): {correct_10/total_10:.4f} , blond male (label 9: 1, label 30: 1): {correct_11/total_11:.4f} \n")
     
 
 if __name__ == "__main__":
