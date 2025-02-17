@@ -113,7 +113,7 @@ def main():
     correct_00, total_00 = test_model(test_data[(0,0)],model, "test")    
 
     print("Confusion Matrix")
-    print(f"dark female (label 9: 0, label 3:0 0) Acc: {correct_00/total_00:.4f} , dark male (label 9: 0, label 30: 1): {correct_01/total_01:.4f} \n")
+    print(f"dark female (label 9: 0, label 30: 0) Acc: {correct_00/total_00:.4f} , dark male (label 9: 0, label 30: 1): {correct_01/total_01:.4f} \n")
     print(f"blonde female (label 9: 1, label 30: 0): {correct_10/total_10:.4f} , blond male (label 9: 1, label 30: 1): {correct_11/total_11:.4f} \n")
     
 

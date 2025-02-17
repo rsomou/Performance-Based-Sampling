@@ -4,7 +4,9 @@ from scipy.spatial import KDTree
 def contrast(image):
     """Computes the standard deviation of grayscale pixel intensities (contrast)."""
     gray_image = np.dot(image[..., :3], [0.2989, 0.5870, 0.1140])  # Faster dot product
-    return gray_image.std()
+    std_val = gray_image.std()
+    norm = std_val / 127.5
+    return np.clip(norm, 0, 1)
 
 # Approximate RGB values for each category
 color_dict = {
