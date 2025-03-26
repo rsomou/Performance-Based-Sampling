@@ -66,7 +66,7 @@ def main():
             args.num_workers
         )
 
-    elif (args.feature_type == 'low_level'):
+    elif (args.feature_type == 'LL'):
         output_path = f"{FEATURE_DIR}/LL_{args.dataset}_{args.split}.csv"
         generate_features(
             dataset,
