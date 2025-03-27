@@ -95,7 +95,7 @@ def get_model_save_path(args):
         str: Path where model should be saved/loaded
     """
     if args.baseline == False:
-        return f"{MODEL_DIR}/finetuned-{args.dataset}-{args.model}-{args.epochs}-{args.sampling_formula}-{args.epsilon}-{args.atoms}-{args.sparsity}.pth"
+        return f"{MODEL_DIR}/finetuned-{args.dataset}-{args.model}-{args.epochs}-{args.sampling_formula}-{args.entropy}-{args.atoms}-{args.sparsity}.pth"
     else:
         return f"{MODEL_DIR}/baseline-{args.dataset}-{args.model}-{args.epochs}.pth"
 
