@@ -114,7 +114,9 @@ if __name__ == "__main__":
                 file.write(f"Class {i} Variance: {c_v}", end=", " if i<len(class_vs)-1 else "")
             print("\n")
             for i in range(len(min_acc)):
-                file.write(f"Class {i} Minimum Accuracy: {min_acc[i]}", end=", " if i<len(class_vs)-1 else "")
+                file.write(f"Class {i} Minimum Accuracy: {min_acc[i]}")
+                if i<len(class_vs)-1:
+                    file.write(", ")
                 file.write("\n")
                 file.write(f"Class {i} Statistics: ")
                 file.write("\n")
