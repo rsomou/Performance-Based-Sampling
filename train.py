@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # Clustering and Sampling Parameters
     parser.add_argument("--atoms", type=int, default=50)
     parser.add_argument("--sparsity", type=int, default=15)
-    parser.add_argument("--epsilon", type=float, default=0)
+    parser.add_argument("--entropy", type=float, default=0)
     parser.add_argument("--sampling_formula", type=str, default="exp_dis")
     
     """
