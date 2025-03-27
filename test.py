@@ -107,7 +107,7 @@ if __name__ == "__main__":
     model.load_state_dict(state_dict)
     
     if(args.eval_var):
-        with open(f"finetuned-{args.dataset}-{args.model}-${args.epochs}-{args.entropy}-{args.atoms}-{args.sparsity}-variance-output.txt", "w") as file:
+        with open(f"{get_model_save_path(args)}-variance-output.txt", "w") as file:
             mean_v, class_vs, min_acc, sizes = evaluate_cluster_variance(args.cluster_assignment_file, model, dataset['train'])
             file.write(f"Mean Variance from {save_path}: {mean_v:.4f}")
             for i,c_v in enumerate(class_vs):
