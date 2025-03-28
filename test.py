@@ -111,7 +111,9 @@ if __name__ == "__main__":
             mean_v, class_vs, min_acc, sizes = evaluate_cluster_variance(args.cluster_assignment_file, model, dataset['train'])
             file.write(f"Mean Variance from {save_path}: {mean_v:.4f}")
             for i,c_v in enumerate(class_vs):
-                file.write(f"Class {i} Variance: {c_v}", end=", " if i<len(class_vs)-1 else "")
+                file.write(f"Class {i} Variance: {c_v}")
+                if i<len(class_vs)-1 :
+                    file.write(', ')
             print("\n")
             for i in range(len(min_acc)):
                 file.write(f"Class {i} Minimum Accuracy: {min_acc[i]}")
