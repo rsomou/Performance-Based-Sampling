@@ -107,24 +107,29 @@ if __name__ == "__main__":
     model.load_state_dict(state_dict)
     
     if(args.eval_var):
-        with open(f"{get_model_save_path(args)}-variance-output.txt", "w") as file:
-            mean_v, class_vs, min_acc, sizes = evaluate_cluster_variance(args.cluster_assignment_file, model, dataset['train'])
-            file.write(f"Mean Variance from {save_path}: {mean_v:.4f}")
-            for i,c_v in enumerate(class_vs):
+        output_file = f"{get_model_save_path(args)}-variance-output.txt"
+        with open(output_file, "w") as file:
+            mean_v, class_vs, min_acc, sizes = evaluate_cluster_variance(
+                args.cluster_assignment_file, model, dataset['train']
+            )
+            file.write(f"Mean Variance from {save_path}: {mean_v:.4f}\n")
+            
+            for i, c_v in enumerate(class_vs):
                 file.write(f"Class {i} Variance: {c_v}")
-                if i<len(class_vs)-1 :
+                if i < len(class_vs) - 1:
                     file.write(', ')
-            print("\n")
+            file.write("\n\n")
+            
             for i in range(len(min_acc)):
                 file.write(f"Class {i} Minimum Accuracy: {min_acc[i]}")
-                if i<len(class_vs)-1:
+                if i < len(min_acc) - 1:
                     file.write(", ")
                 file.write("\n")
-                file.write(f"Class {i} Statistics: ")
+                file.write(f"Class {i} Statistics:\n")
+                for k, v in sizes[i].items():
+                    file.write(f"Cluster {k} Stats: Size {v[0]}, Acc: {v[1]} \n")
                 file.write("\n")
-                for k,v in sizes[i].items():
-                    file.write(f"Cluster {k} Stats: Size {v[0]}, Acc: {v[1]} ")
-                file.write("\n")
+        print(f"Variance evaluation results saved to {output_file}")
     else:   
         # Evaluate model performance
         print(f"Evaluating model {save_path} performance")
