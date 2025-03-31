@@ -107,7 +107,7 @@ if __name__ == "__main__":
     model.load_state_dict(state_dict)
     
     if(args.eval_var):
-        output_file = f"{get_model_save_path(args)}-variance-output.txt"
+        output_file = f"{args.model_file[:-4]}-variance-output.txt"
         with open(output_file, "w") as file:
             mean_v, class_vs, min_acc, sizes = evaluate_cluster_variance(
                 args.cluster_assignment_file, model, dataset['train']
