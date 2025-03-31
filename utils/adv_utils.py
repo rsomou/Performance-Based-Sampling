@@ -272,7 +272,7 @@ def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
             class_to_avg_acc[class_idx] = avg_acc
 
 
-        a = 0.85 # Tunable parameter
+        a = 0.2 # Tunable parameter
         sampling_ratios = []
         for entry in asgn_mp:
             class_idx = entry['class_idx']
@@ -281,7 +281,7 @@ def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
             acc_mean = class_to_avg_acc[class_idx]
 
             # Sampling ratio formula
-            sampling_ratio = np.clip(np.exp((acc_mean - acc) / a),0.85,2.75)
+            sampling_ratio = np.clip(np.exp((acc_mean - acc) / a),0.95,3)
             sampling_ratios.append(sampling_ratio)
 
         return sampling_ratios
