@@ -287,7 +287,7 @@ def generate_sampling_ratios(args, ds_len, assignments , method="max_err"):
         return sampling_ratios
             
     
-    raise ValueError(f"Method '{method}' is not implemented.")
+    raise ValueErraddor(f"Method '{method}' is not implemented.")
 
 
 def evaluate_cluster_variance(cluster_file, model, data):
