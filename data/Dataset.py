@@ -70,7 +70,7 @@ class ImageDatasetSampled(Dataset):
 
 # Dataset paths
 DATASET_PATHS = {
-    "imagenet": "./data/tiny-imagenet-200",
+    "imagenet": "./data",
     "cifar100": "./data/cifar100",
     "celebA": "./data/celebA",
     "tinyimagenetc": "./data/tinyimagenetc",
