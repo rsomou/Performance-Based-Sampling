@@ -29,59 +29,67 @@ def download_dataset(base_path):
 
 def get_dataset_imagenet(base_path):
     """
-    Loads Tiny ImageNet into a dictionary with:
-      {
-        "train": [{"image": PIL.Image, "label": int}, ...],
-        "valid": [{"image": PIL.Image, "label": None}, ...]
-      }
-    Training images are read from the class subdirectories under train/
-    and validation images are loaded from val/images/ (without labels).
-    NOTE: All images are loaded as PIL objects.
+    Returns a dictionary:
+        {
+          "train": [
+             {"image": PIL.Image, "label": int},
+             {"image": PIL.Image, "label": int},
+             ...
+          ],
+          "valid": [
+             {"image": PIL.Image, "label": int},
+             ...
+          ]
+        }
     """
     download_dataset(base_path)
     dataset_dir = os.path.join(base_path, DATASET_NAME)
     train_dir = os.path.join(dataset_dir, "train")
     val_dir = os.path.join(dataset_dir, "val")
 
-    # Build a mapping from class names to index based on the train folder names.
-    classes = sorted(
-        [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
-    )
+    # 1. Build class -> idx mapping from train folder
+    classes = sorted([
+        d for d in os.listdir(train_dir)
+        if os.path.isdir(os.path.join(train_dir, d))
+    ])
     class_to_idx = {cls_name: idx for idx, cls_name in enumerate(classes)}
 
+    # Prepare our final structure
     dataset = {"train": [], "valid": []}
 
-    # Load training images with labels.
+    # 2. Populate "train" list with {"image": <PIL>, "label": <int>}
     for cls_name in classes:
         cls_idx = class_to_idx[cls_name]
         images_dir = os.path.join(train_dir, cls_name, "images")
         for fname in os.listdir(images_dir):
             if fname.lower().endswith((".jpg", ".jpeg", ".png")):
                 fpath = os.path.join(images_dir, fname)
-                try:
-                    img = Image.open(fpath).convert("RGB")
-                except Exception as e:
-                    print(f"Error loading image {fpath}: {e}")
-                    continue
+                # Load the image as PIL
+                img = Image.open(fpath).convert("RGB")
                 dataset["train"].append({
                     "image": img,
                     "label": cls_idx
                 })
 
-    # Load validation images without labels.
-    val_images_dir = os.path.join(val_dir, "images")
-    for fname in os.listdir(val_images_dir):
-        if fname.lower().endswith((".jpg", ".jpeg", ".png")):
-            fpath = os.path.join(val_images_dir, fname)
-            try:
-                img = Image.open(fpath).convert("RGB")
-            except Exception as e:
-                print(f"Error loading image {fpath}: {e}")
-                continue
-            dataset["valid"].append({
-                "image": img,
-                "label": None
-            })
+    # 3. Populate "valid" list using val_annotations.txt
+    val_anno_path = os.path.join(val_dir, "val_annotations.txt")
+    val_df = pd.read_csv(
+        val_anno_path, sep='\t', header=None,
+        names=["File", "Class", "X", "Y", "W", "H"]
+    )
+    for _, row in val_df.iterrows():
+        fname = row["File"]
+        cls_name = row["Class"]
+        if cls_name not in class_to_idx:
+            # Ideally should not happen, but just in case
+            continue
+
+        fpath = os.path.join(val_dir, "images", fname)
+        img = Image.open(fpath).convert("RGB")
+        dataset["valid"].append({
+            "image": img,
+            "label": class_to_idx[cls_name]
+        })
 
     return dataset
 
