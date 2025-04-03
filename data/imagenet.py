@@ -3,6 +3,7 @@ import requests
 import zipfile
 from io import BytesIO
 from PIL import Image
+import pandas as pd
 
 DATASET_NAME = "tiny-imagenet-200"
 IMAGES_URL = "http://cs231n.stanford.edu/tiny-imagenet-200.zip"
