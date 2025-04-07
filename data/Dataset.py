@@ -42,23 +42,16 @@ def custom_collate_fn(batch):
     return torch.stack(images, dim=0), torch.tensor(labels)
 
 def clip_collate_fn(batch):
-    images = []
     labels = []
+    images = []
     for item in batch:
-        # Each item is a tuple: (image_or_path, label)
-        img, lab = item
-        
-        # If img is a string, assume it's a file path and load the image.
-        if isinstance(img, str):
-            img = Image.open(img).convert("RGB")
-        
-        # Apply the CLIP transform
-        img = CLIP_transform(img)
-        img = torch.squeeze(img)
-        images.append(img)
+
+        image, lab = CLIP_transform(item['image']), item['label']   
+        image = torch.squeeze(image) 
+        images.append(image)
         labels.append(lab)
-        
-    return torch.stack(images, dim=0), torch.tensor(labels)
+
+    return torch.stack(images, dim=0), torch.Tensor(labels)
 
 
 class ImageDataset(Dataset):
