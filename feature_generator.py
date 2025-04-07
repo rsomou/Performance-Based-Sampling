@@ -1,7 +1,7 @@
 import argparse
 import torch
 from torch.utils.data import DataLoader
-from data.Dataset import get_dataset, ImageDataset, transform, custom_collate_fn
+from data.Dataset import get_dataset, ImageDataset, transform, clip_collate_fn
 from transformers import AutoProcessor, CLIPModel
 import csv
 from tqdm import tqdm
@@ -21,7 +21,7 @@ def extract_clip_features(dataset, split, output_path, batch_size=32, num_worker
     loader = DataLoader(
         dataset[split], 
         batch_size=batch_size,
-        collate_fn=custom_collate_fn,
+        collate_fn=clip_collate_fn,
         num_workers=num_workers
     )
 

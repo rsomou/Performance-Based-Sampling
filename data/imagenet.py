@@ -2,7 +2,6 @@ import os
 import requests
 import zipfile
 from io import BytesIO
-from PIL import Image
 import pandas as pd
 
 DATASET_NAME = "tiny-imagenet-200"
@@ -30,18 +29,19 @@ def download_dataset(base_path):
 
 def get_dataset_imagenet(base_path):
     """
-    Returns a dictionary:
+    Returns a dictionary for lazy loading:
         {
           "train": [
-             {"image": PIL.Image, "label": int},
-             {"image": PIL.Image, "label": int},
+             {"image_path": str, "label": int},
+             {"image_path": str, "label": int},
              ...
           ],
           "valid": [
-             {"image": PIL.Image, "label": int},
+             {"image_path": str, "label": int},
              ...
           ]
         }
+    Instead of loading the image into memory, this returns the file path.
     """
     download_dataset(base_path)
     dataset_dir = os.path.join(base_path, DATASET_NAME)
@@ -58,17 +58,15 @@ def get_dataset_imagenet(base_path):
     # Prepare our final structure
     dataset = {"train": [], "valid": []}
 
-    # 2. Populate "train" list with {"image": <PIL>, "label": <int>}
+    # 2. Populate "train" list with {"image_path": <str>, "label": <int>}
     for cls_name in classes:
         cls_idx = class_to_idx[cls_name]
         images_dir = os.path.join(train_dir, cls_name, "images")
         for fname in os.listdir(images_dir):
             if fname.lower().endswith((".jpg", ".jpeg", ".png")):
                 fpath = os.path.join(images_dir, fname)
-                # Load the image as PIL
-                img = Image.open(fpath).convert("RGB")
                 dataset["train"].append({
-                    "image": img,
+                    "image_path": fpath,
                     "label": cls_idx
                 })
 
@@ -86,9 +84,8 @@ def get_dataset_imagenet(base_path):
             continue
 
         fpath = os.path.join(val_dir, "images", fname)
-        img = Image.open(fpath).convert("RGB")
         dataset["valid"].append({
-            "image": img,
+            "image_path": fpath,
             "label": class_to_idx[cls_name]
         })
 

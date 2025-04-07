@@ -31,18 +31,18 @@ def get_initial_loaders(dataset, sampling_ratios):
         raise ValueError("Dataset must contain a 'train' split")
 
     train_ds = generate_train_dataset(dataset['train'], sampling_ratios)
-    dataloaders['train'] = DataLoader(train_ds, batch_size=32, shuffle=True, pin_memory = True)
+    dataloaders['train'] = DataLoader(train_ds, batch_size=32, shuffle=True, pin_memory = True, num_workers = 4, collate_fn = custom_collate_fn)
     dataset_sizes['train'] = len(train_ds)
 
     if 'valid' in dataset:
         valid_ds = ImageDataset(dataset, 'valid', transform=transform)
-        dataloaders['valid'] = DataLoader(valid_ds, batch_size=32, shuffle=True, pin_memory = True)
+        dataloaders['valid'] = DataLoader(valid_ds, batch_size=32, shuffle=True, pin_memory = True, num_workers = 4, collate_fn = custom_collate_fn)
         dataset_sizes['valid'] = len(valid_ds)
 
     if 'test' in dataset:
         print("No validation set found, using test set for validation")
         valid_ds = ImageDataset(dataset, 'test', transform=transform)
-        dataloaders['valid'] = DataLoader(valid_ds, batch_size=32, shuffle=True, pin_memory = True)
+        dataloaders['valid'] = DataLoader(valid_ds, batch_size=32, shuffle=True, pin_memory = True, num_workers = 4, collate_fn = custom_collate_fn)
         dataset_sizes['valid'] = len(valid_ds)
     
     
