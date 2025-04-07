@@ -1,6 +1,6 @@
 import argparse
 import sys
-from data.Dataset import get_dataset, ImageDataset, custom_collate_fn
+from data.Dataset import get_dataset, ImageDataset, custom_collate_fn, transform
 from utils.models import (
     get_model_architecture, 
     get_model_save_path, 
@@ -15,7 +15,7 @@ import numpy as np
 from utils.adv_utils import evaluate_cluster_variance
 
 
-def test_model(dataset, model):
+def test_model(dataset, model, split):
     """
     Test model either using clusters or standard evaluation.
     """
@@ -28,7 +28,7 @@ def test_model(dataset, model):
     total = 0
     
     # Create validation dataloader directly from dataset structure
-    valid_ds = ImageDataset({"valid": dataset["valid"]}, 'valid', transform=transform)
+    valid_ds = ImageDataset({split: dataset["valid"]}, 'valid', transform=transform)
     valid_loader = DataLoader(valid_ds, batch_size=32, shuffle=True, pin_memory = True, num_workers = 4, collate_fn = custom_collate_fn)
 
     with torch.no_grad():
@@ -56,6 +56,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="resnet-s")
     parser.add_argument("--baseline", action="store_true", default=False)
     parser.add_argument("--random_w", action="store_true", default=False)
+
+    parser.add_argument("--split", type=str, default="valid", help="Use Test Split if available")
 
     parser.add_argument("--model_file", type=str, default="", help="model file path to load directly")
     parser.add_argument("--cluster_assignment_file", type=str, default="")

@@ -11,52 +11,54 @@ from tqdm import tqdm
 import gc
 
 
-def get_dataset_celebA(path, samples_per_class = 24000):
+def get_dataset_celebA(path, samples_per_class=24000):
     """
-    Get CelebA dataset using torchvision
-    Returns formatted dataset with images and blond hair labels (attr_index 9 for blonde hair)
-    Includes all three splits: train, valid, test
-    """
-    print("Loading CelebA dataset...")
+    Lazily load the CelebA dataset using torchvision.
     
-    def process_split(split):
-        print(f"\nProcessing {split} split...")
-        dataset = datasets.CelebA(root=path, split=split, target_type='attr', download=True)
-        images, labels = [], []
-        label_counts = {0:0,1:0}
+    Instead of loading all images into memory, this function reads the list
+    of image file names and their corresponding attributes from the downloaded
+    dataset. It then filters the data based on the desired number of samples per class 
+    for blond hair (attribute index 9). The returned dataset for each split 
+    contains dictionaries with:
+    
+        {"image": <file_path>, "label": <blond hair label>}
+    
+    Parameters:
+        path (str): Root directory where CelebA is (or will be) downloaded.
+        samples_per_class (int): Maximum number of samples to keep per class.
         
-        for img, target in tqdm(dataset):
-            if((label_counts[0]>=samples_per_class and int(target[9]) == 0) or (label_counts[1]>=samples_per_class and int(target[9]) == 1)):
-                continue
-            with img: # This will auto-close the image
-                label = int(target[9])
-                images.append(img.copy()) # Make a copy before closing
-                labels.append(label)
-                label_counts[label] += 1
-            
-        return images, labels, dict(label_counts)
+    Returns:
+        all_data (dict): A dictionary with splits ('train', 'valid', 'test') as keys.
+        all_counts (dict): A dictionary with the final label counts for each split.
+    """
+    print("Loading CelebA dataset lazily...")
 
-    # Process all splits
     splits = ['train', 'valid', 'test']
     all_data = {}
     all_counts = {}
-    
-    for split in splits:
-        images, labels, counts = process_split(split)
-        all_data[split] = [{"image": img, "label": lbl} for img, lbl in zip(images, labels)]
-        all_counts[split] = counts
-    
-    return all_data
 
-if __name__ == "__main__":
-    try:
-        gc.collect()
-        dataset, _, counts = get_dataset_celebA("./celebA")
-        print("\nDataset loaded successfully!")
-        print(f"Training samples: {len(dataset['train'])}")
-        print(f"Validation samples: {len(dataset['valid'])}")
-        print("\nLabel distribution:")
-        print("Training set:", counts['train'])
-        print("Validation set:", counts['valid'])
-    except Exception as e:
-        print(f"Error loading dataset: {str(e)}")
+    for split in splits:
+        print(f"\nProcessing {split} split lazily...")
+        # Create a CelebA dataset for the given split.
+        split_dataset = datasets.CelebA(root=path, split=split, target_type="attr", download=True)
+        # 'filename' is a list of image file names.
+        filenames = split_dataset.filename
+        # 'attr' is a list (or array) of attribute vectors for each image.
+        # We extract the blond hair attribute (index 9) and convert to int.
+        labels = [int(attr[9]) for attr in split_dataset.attr]
+        
+        # We'll collect file paths and labels until we reach samples_per_class per label.
+        label_counts = {0: 0, 1: 0}
+        data = []
+        for fname, label in tqdm(zip(filenames, labels), total=len(filenames), desc=f"Filtering {split}"):
+            if label_counts[label] >= samples_per_class:
+                continue
+            # Build the full file path. The CelebA dataset stores images in the base_folder.
+            img_path = os.path.join(split_dataset.base_folder, fname)
+            data.append({"image": img_path, "label": label})
+            label_counts[label] += 1
+
+        all_data[split] = data
+        all_counts[split] = label_counts
+
+    return all_data, all_counts
