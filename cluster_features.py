@@ -24,8 +24,6 @@ from utils.models import (
     get_dataset_root
 )
 
-
-from data.Dataset import ImageDataset, transform, custom_collate_fn
 from utils.adv_utils import nnk_clustering
 
 if __name__ == "__main__":
