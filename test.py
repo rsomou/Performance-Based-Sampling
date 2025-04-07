@@ -1,6 +1,6 @@
 import argparse
 import sys
-from data.Dataset import get_dataset, ImageDataset, transform
+from data.Dataset import get_dataset, ImageDataset, custom_collate_fn
 from utils.models import (
     get_model_architecture, 
     get_model_save_path, 
@@ -29,7 +29,7 @@ def test_model(dataset, model):
     
     # Create validation dataloader directly from dataset structure
     valid_ds = ImageDataset({"valid": dataset["valid"]}, 'valid', transform=transform)
-    valid_loader = DataLoader(valid_ds, batch_size=32, shuffle=False)
+    valid_loader = DataLoader(valid_ds, batch_size=32, shuffle=True, pin_memory = True, num_workers = 4, collate_fn = custom_collate_fn)
 
     with torch.no_grad():
         for images, labels in valid_loader:
