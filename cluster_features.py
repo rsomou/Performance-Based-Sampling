@@ -17,7 +17,7 @@ import time
 from scipy.spatial import KDTree
 
 import argparse
-from data.Dataset import get_dataset, ImageDataset, ImageDatasetSampled, transform, custom_collate_fn, generate_train_dataset
+from data.Dataset import get_dataset, ImageDataset, ImageDatasetSampled, transform, generate_train_dataset
 from utils.models import (
     get_model_architecture, 
     get_model_save_path, 

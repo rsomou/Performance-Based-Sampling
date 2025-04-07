@@ -1,6 +1,6 @@
 import argparse
 import sys
-from data.Dataset import get_dataset, ImageDataset, custom_collate_fn, transform
+from data.Dataset import get_dataset, ImageDataset, transform
 from utils.models import (
     get_model_architecture, 
     get_model_save_path, 
