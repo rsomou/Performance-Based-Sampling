@@ -39,12 +39,8 @@ def get_dataset_celebA(path, samples_per_class=24000):
 
     for split in splits:
         print(f"\nProcessing {split} split lazily...")
-        # Create a CelebA dataset for the given split.
         split_dataset = datasets.CelebA(root=path, split=split, target_type="attr", download=True)
-        # 'filename' is a list of image file names.
         filenames = split_dataset.filename
-        # 'attr' is a list (or array) of attribute vectors for each image.
-        # We extract the blond hair attribute (index 9) and convert to int.
         labels = [int(attr[9]) for attr in split_dataset.attr]
         
         # We'll collect file paths and labels until we reach samples_per_class per label.
@@ -55,7 +51,7 @@ def get_dataset_celebA(path, samples_per_class=24000):
                 continue
             # Build the full file path. The CelebA dataset stores images in the base_folder.
             img_path = os.path.join(split_dataset.base_folder, fname)
-            data.append({"image": img_path, "label": label})
+            data.append({"image_path": img_path, "label": label})
             label_counts[label] += 1
 
         all_data[split] = data
