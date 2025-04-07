@@ -35,8 +35,6 @@ def custom_collate_fn(batch):
         if isinstance(img, str):
             img = Image.open(img).convert("RGB")
         
-        # Apply the standard transform
-        img = transform(img)
         img = torch.squeeze(img)
         images.append(img)
         labels.append(lab)
