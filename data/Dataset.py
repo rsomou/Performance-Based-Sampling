@@ -24,42 +24,6 @@ CLIP_transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-def custom_collate_fn(batch):
-    images = []
-    labels = []
-    for item in batch:
-        # Each item is expected to be a tuple: (image_or_path, label)
-        img, lab = item
-        
-        # If img is a string, assume it's a file path and load the image.
-        if isinstance(img, str):
-            img = Image.open(img).convert("RGB")
-        
-        img = torch.squeeze(img)
-        images.append(img)
-        labels.append(lab)
-        
-    return torch.stack(images, dim=0), torch.tensor(labels)
-
-def clip_collate_fn(batch):
-    images = []
-    labels = []
-    for item in batch:
-        # Each item is a tuple: (image_or_path, label)
-        img, lab = item
-        
-        # If img is a string, assume it's a file path and load the image.
-        if isinstance(img, str):
-            img = Image.open(img).convert("RGB")
-        
-        # Apply the CLIP transform
-        img = CLIP_transform(img)
-        img = torch.squeeze(img)
-        images.append(img)
-        labels.append(lab)
-        
-    return torch.stack(images, dim=0), torch.tensor(labels)
-
 
 class ImageDataset(Dataset):
     """
