@@ -1,4 +1,6 @@
-# Performance-Based-Sampling
-Research Project
+# Performance-Based-Feature-Sampling
 
-Cifar100 loader works. Low level features need to be worked on for functionality
+Official Repository of "MITIGATING SPURIOUS CORRELATIONS IN IMAGE RECOGNITION MODELS USING PERFORMANCE-BASED FEATURE SAMPLING"
+Accepted at SCSL @ ICLR 2025.
+
+
